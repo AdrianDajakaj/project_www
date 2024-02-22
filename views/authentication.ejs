@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/authentication_style.css' />
+  </head>
+  <body>
+    <p><%= message %></p>
+    <div class="authentication-container" id="authentication-container">
+        <div class="form-container sign-up">
+            <form action="/signup" method="post">
+                <h1>Rejestracja</h1>
+
+                <input id="firstName" name="firstname" pattern="[A-Za-z]+" type="text" placeholder="Imię" required>
+                <input id="lastName" name="lastname" pattern="[A-Za-z]+" type="text" placeholder="Nazwisko" required>
+                <input id="username" name="username" type="email" placeholder="Email" autocomplete="username" require autofocus>
+                <input id="password" name="password" type="password" placeholder="Hasło" autocomplete="current-password" required> 
+                <button id="registerBtn" type="submit">Zarejestruj</button>
+            </form>
+        </div> 
+
+        <div class="form-container sign-in">
+            <form action="/password" method="post">
+                <h1>Logowanie</h1>
+                <input id="username" name="username" type="email" placeholder="Email" autocomplete="username" required autofocus>
+                <input id="current-password" name="password" type="password" placeholder="Hasło" autocomplete="current-password" required>
+                <button type="submit">Zaloguj</button>
+            </form>
+        </div> 
+
+        <div class="welcome-container">
+            <div class="welcome">
+                <div class="welcome-panel panel-left">
+                    <h3>Kieruj się następującymi zasadami: </h3>
+                    <ul>
+                        <li><p>imię i nazwisko musi być złożone wyłącznie z liter </p></li>
+                        <li><p>raz użyty adres e-mail nie może być użyty ponownie</p></li>
+                        <li><p>hasło musi się składać z co najmniej 8 znaków.</li>
+                    </ul>
+                    <h3>Masz już konto?</h3>
+                    <button class="hidden" id="login"> Przejdź do logowania</button>
+                </div>
+
+                <div class="welcome-panel panel-right">
+                    <h1>Witamy w aplikacji!</h1>
+                    <h3>Nie masz konta?</h3>
+                    <button class="hidden" id="register">Przejdź do rejestracji</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('authentication-container');
+        const registerBtn = document.getElementById('register');
+        const loginBtn = document.getElementById('login');
+
+        registerBtn.addEventListener('click', 
+        () => {
+            container.classList.add("active");
+        }
+        );
+
+        loginBtn.addEventListener('click', 
+        () => {
+            container.classList.remove("active");
+        }
+        );
+
+        var inputFirstName = document.getElementById('firstName');
+        var inputLastName = document.getElementById('lastName');
+
+        inputFirstName.addEventListener('input', function() {
+            this.value = this.value.replace(/[^A-Za-z]/g, '');
+        });
+        inputLastName.addEventListener('input', function() {
+            this.value = this.value.replace(/[^A-Za-z]/g, '');
+        });
+
+        var inputField = document.getElementById('password');
+        var submitButton = document.getElementById('registerBtn');
+
+        inputField.addEventListener('input', function() {
+            if (inputField.value.length >= 8) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        });
+    </script>
+  </body>
+</html>

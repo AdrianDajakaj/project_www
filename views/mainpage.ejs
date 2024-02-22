@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/mainpage_style.css' />
+    <link rel='stylesheet' href='/stylesheets/infopopup_style.css' />
+
+  </head>
+  <body>
+    <div class="add-book-popup" id="addBookPopup">
+        <div class="add-header">
+            <div class='add-header-title'>
+                <h3>Dodawanie książki</h3>
+            </div>
+            <div class='add-header-icon' id="addHeaderIcon">
+                <i class="ph ph-x"></i>
+            </div>
+        </div>
+        <div class="add-container">
+            <h4>Podaj liczbę stron Twojego wydania książki</h4>
+            <div class="add-container-inner">
+                <input id="pagesNumber" name="pagesNumber" type="text" placeholder="Ilość stron" onkeypress="return allowOnlyNumbers(event)">
+                <button id="submitButton">Potwierdź</button>
+            </div>
+        </div>
+    </div>
+    <div class="info-popup" id="infoPopup">
+        <div class="info-header">
+            <div class='info-header-title'>
+                <h3>Informacje</h3>
+            </div>
+            <div class='info-header-icon' id="infoHeaderIcon">
+                <i class="ph ph-x"></i>
+            </div>
+        </div>
+        <div class="info-container">
+            <div class="info-book" id="popupInfoBookCover"></div>
+            <div class='info-right'>
+                <div class='info-book-title'>
+                    <div class='info-book-title-1'>
+                        <p>Tytuł</p>
+                    </div>
+                    <div class='info-book-title-2' id="popupInfoBookTitle"></div>
+                </div>
+
+                <div class='info-book-title'>
+                    <div class='info-book-title-1'>
+                        <p>Autor</p>
+                    </div>
+                    <div class='info-book-title-2' id="popupInfoBookAuthor"></div>
+                </div>
+
+                <div class='info-book-title'>
+                    <div class='info-book-title-1'>
+                        <p>Gatunek</p>
+                    </div>
+                    <div class='info-book-title-2' id="popupInfoBookGenre"></div>
+                </div>
+                <div class="info-text-container">
+                    <div class="info-scrollbox">
+                        <div class="info-scrollbox-inner" id="popupInfoBookDescription"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <div class="main-container-left">
+            <div class="search-container">
+                <div class="search-bar">
+                    <div class="search-icon"><i class="ph ph-magnifying-glass"></i></div>
+                    <input type = "text" id="searchInput" class="search-input"  pattern="[a-zA-Z0-9.]*" placeholder='Wyszukaj książkę...'>
+                </div>
+
+                <div class="search-results-container" id="searchResultsContainer">
+                    <div class="search-results-scrollbox">
+                        <div class="search-results-scrollbox-inner">
+                            <div class="search-results" id="searchResults"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form action="/logout" method="post">
+                <input type="hidden" name="logout" id="logout"/>
+                <button type="submit">Wyloguj się</button>
+            </form>
+        </div>
+
+        <div class="main-container-right-outer">
+            <div class="main-container-right-header">
+                <h1>Twoja biblioteka</h1>
+            </div>
+            <div class="main-container-right" id="mainContainerRight">
+
+            </div>
+        </div>
+    </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    function allowOnlyNumbers(event) {
+      var keycode = event.keyCode ? event.keyCode : event.which;
+
+      if ((keycode >= 48 && keycode <= 57) || keycode == 8 || (keycode >= 37 && keycode <= 40)) {
+        return true;
+      } else {
+        event.preventDefault();
+        return false;
+      }
+    }
+
+    document.getElementById('searchResultsContainer').style.visibility = "hidden";
+    var clickedBook = null;
+    $(document).ready(function () {
+        $.ajax({
+          url: '/library',
+          method: 'GET',
+          success: function (data) {
+            data.forEach(function (result) {
+                console.log(result);
+              $('#mainContainerRight').append('\
+                <div class="lib-result">\
+                    <div class="lib-result-container-layer">\
+                        <div class="lib-result-container">\
+                            <div class="lib-result-image-container">\
+                                <img class="lib-result-image" src="' + result.bookCover + '" alt="Image"/>\
+                            </div>\
+                            <div class="lib-result-description">\
+                                <h4>' + result.bookTitle + '</h4>\
+                                <p>' + result.bookAuthor + '</p>\
+                            </div>\
+                        </div>\
+                    </div> \
+                    <div class="lib-result-menu" id="bookMenu">\
+                        <div class="lib-menu-item book-info" data-book-id="' + result.id + '">\
+                            <div class="lib-menu-icon">\
+                                <i class="ph ph-info"></i>\
+                            </div>\
+                            <h3>Informacje</h3>\
+                        </div>\
+                        <div class="lib-menu-item book-remove" data-book-id="' + result.id + '">\
+                            <div class="lib-menu-icon">\
+                                <i class="ph ph-minus-circle"></i>\
+                            </div>\
+                            <h3>Usuń z biblioteki</h3>\
+                        </div>\
+                    </div>\
+                </div>');
+            });
+          },
+          error: function (xhr, status, error) {
+            console.error('Error:', error);
+          }
+        });
+    });
+
+
+    $(document).ready(function () {
+      $('#searchInput').on('input', function () {
+        var searchTerm = $(this).val();
+        if (searchTerm.trim().length === 0) {
+          $('#searchResults').empty();
+          $('#searchResultsContainer').css("visibility", "hidden");
+          return;
+        }
+        $.ajax({
+          url: '/search',
+          method: 'POST',
+          data: { searchTerm: searchTerm },
+          success: function (data) {
+            $('#searchResults').empty();
+            $('#searchResultsContainer').css("visibility", "visible");
+            data.forEach(function (result) {
+              $('#searchResults').append('\
+                <div class="search-result" id="searchResult">\
+                    <div class="search-result-container-layer">\
+                        <div class="search-result-container">\
+                            <div class="search-result-image-container">\
+                                <img class="search-result-image" src="' + result.bookCover + '" alt="Image"/>\
+                            </div>\
+                            <div class="search-result-description">\
+                                <h4>' + result.bookTitle + '</h4>\
+                                <p>' + result.bookAuthor + '</p>\
+                            </div>\
+                        </div>\
+                    </div> \
+                    <div class="search-result-menu" id="bookMenu">\
+                        <div class="search-menu-item book-info" data-book-id="' + result.id + '">\
+                            <div class="search-menu-icon">\
+                                <i class="ph ph-info"></i>\
+                            </div>\
+                            <h3>Informacje</h3>\
+                        </div>\
+                        <div class="search-menu-item book-add" data-book-id="' + result.id + '">\
+                            <div class="search-menu-icon">\
+                                <i class="ph ph-plus-circle"></i>\
+                            </div>\
+                            <h3>Dodaj do biblioteki</h3>\
+                        </div>\
+                    </div>\
+                </div>');
+            });
+          },
+          error: function (xhr, status, error) {
+            console.error('Error:', error);
+          }
+        });
+      });
+
+      $('#searchResults').on('click', '.book-info', function () {
+        var bookId = $(this).data('book-id');
+        $('#popupInfoBookCover').empty();
+        $('#popupInfoBookTitle').empty();
+        $('#popupInfoBookAuthor').empty();
+        $('#popupInfoBookGenre').empty();
+        $('#popupInfoBookDescription').empty();
+        $.ajax({
+            url: '/bookid/' + bookId,
+            method: 'GET',
+            success: function(data) {
+                $('#popupInfoBookCover').append('<img src="'+data[0].bookCover+'" class="info-book-image"/>');
+                $('#popupInfoBookTitle').append('<p>'+data[0].bookTitle+'</p>');
+                $('#popupInfoBookAuthor').append('<p>'+data[0].bookAuthor+'</p>');
+                $('#popupInfoBookGenre').append('<p>'+data[0].bookGenre+'</p>');
+                $('#popupInfoBookDescription').append('<div class="info-text">'+data[0].bookDescription+'</div>');
+                $('#mainContainer').css({
+                    'filter': 'blur(7px)',
+                    'background': 'rgba(0,0,0,0.08)',
+                    'transition': 'filter 0ms ease-in-out 0ms',
+                    'pointer-events': 'none'
+                })
+                $('#infoPopup').css({
+                    'display': 'inline'
+                })
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+      });
+
+      $('#mainContainerRight').on('click', '.book-info', function () {
+        var bookId = $(this).data('book-id');
+        $('#popupInfoBookCover').empty();
+        $('#popupInfoBookTitle').empty();
+        $('#popupInfoBookAuthor').empty();
+        $('#popupInfoBookGenre').empty();
+        $('#popupInfoBookDescription').empty();
+        $.ajax({
+            url: '/bookid/' + bookId,
+            method: 'GET',
+            success: function(data) {
+                $('#popupInfoBookCover').append('<img src="'+data[0].bookCover+'" class="info-book-image"/>');
+                $('#popupInfoBookTitle').append('<p>'+data[0].bookTitle+'</p>');
+                $('#popupInfoBookAuthor').append('<p>'+data[0].bookAuthor+'</p>');
+                $('#popupInfoBookGenre').append('<p>'+data[0].bookGenre+'</p>');
+                $('#popupInfoBookDescription').append('<div class="info-text">'+data[0].bookDescription+'</div>');
+                $('#mainContainer').css({
+                    'filter': 'blur(7px)',
+                    'background': 'rgba(0,0,0,0.08)',
+                    'transition': 'filter 0ms ease-in-out 0ms',
+                    'pointer-events': 'none'
+                })
+                $('#infoPopup').css({
+                    'display': 'inline'
+                })
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+      });
+
+      $('#mainContainerRight').on('click', '.book-remove', function () {
+        var bookId = $(this).data('book-id');
+        $('#popupInfoBookCover').empty();
+        $('#popupInfoBookTitle').empty();
+        $('#popupInfoBookAuthor').empty();
+        $('#popupInfoBookGenre').empty();
+        $('#popupInfoBookDescription').empty();
+        $.ajax({
+            url: '/bookid/' + bookId,
+            method: 'GET',
+            success: function(data) {
+                $('#popupInfoBookCover').append('<img src="'+data[0].bookCover+'" class="info-book-image"/>');
+                $('#popupInfoBookTitle').append('<p>'+data[0].bookTitle+'</p>');
+                $('#popupInfoBookAuthor').append('<p>'+data[0].bookAuthor+'</p>');
+                $('#popupInfoBookGenre').append('<p>'+data[0].bookGenre+'</p>');
+                $('#popupInfoBookDescription').append('<div class="info-text">'+data[0].bookDescription+'</div>');
+                $('#mainContainer').css({
+                    'filter': 'blur(7px)',
+                    'background': 'rgba(0,0,0,0.08)',
+                    'transition': 'filter 0ms ease-in-out 0ms',
+                    'pointer-events': 'none'
+                })
+                $('#infoPopup').css({
+                    'display': 'inline'
+                })
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+      });
+      $('#searchResults').on('click', '.book-add', function () {
+        var bookId = $(this).data('book-id');
+        $('#mainContainer').css({
+            'filter': 'blur(7px)',
+            'background': 'rgba(0,0,0,0.08)',
+            'transition': 'filter 0ms ease-in-out 0ms',
+            'pointer-events': 'none'
+        })
+        $('#addBookPopup').css({
+            'display': 'inline'
+        })
+        var inputValue = $('#pagesNumber').val();
+        if(inputValue!==null){
+        if(inputValue.trim().length !== 0 ){
+            inputValue = parseInt(inputValue);
+            $('#submitButton').on('click', function(){
+                $.ajax({
+                    url: '/bookid/' + bookId,
+                    method: 'POST',
+                    data: {
+                        pagesNumber: inputValue,
+                    },
+                    success: function(dat) {
+                        alert("Dodano do biblioteki");
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        );
+    }}
+      });
+    });
+
+    $(document).ready(function() {
+      $('#infoHeaderIcon').click(function() {
+        $('#mainContainer').css({
+            'filter': '',
+            'background': '',
+            'transition': '',
+            'pointer-events': ''
+        })
+        $('#infoPopup').css({
+            'display': 'none'
+        })
+      });
+    });
+
+    $(document).ready(function() {
+      $('#addHeaderIcon').click(function() {
+        $('#mainContainer').css({
+            'filter': '',
+            'background': '',
+            'transition': '',
+            'pointer-events': ''
+        })
+        $('#addBookPopup').css({
+            'display': 'none'
+        })
+      });
+    });
+  </script>
+</body>
+</html>
